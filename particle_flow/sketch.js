@@ -22,12 +22,13 @@ let particleAge = [];
 let particleSize = [];
 const pcount = 1000;
 const noiseScale = 0.01;
-const defaultLifespan = 100;
+const defaultLifespan = 2000;
+const lifespanSpread = 200;
 
 prevSeed = 0;
 currSeed = 0;
 seedLifeCounter = 0;
-const seedLife = 60;
+const seedLife = 180;
 
 function setup() {
   createCanvas(1920, 1080);
@@ -38,7 +39,7 @@ function setup() {
     particles.push(createVector(random(width), random(height), zVal));
     particleVelocity.push(createVector(0, 0));
     //particleLifespan.push(createVector(defaultLifespan + random(-10, 10)));
-    particleLifespan.push(defaultLifespan + random(-10, 10));
+    particleLifespan.push(defaultLifespan + random(-lifespanSpread, lifespanSpread));
     //particleAge.push(createVector(0));
     particleAge.push(0);
     particleSize.push(createVector(0));
@@ -95,17 +96,13 @@ function draw() {
     particle.y += velocity.y;
 
     // refresh particles based on age / position
-    age += 1;
-    print(age);
-    if (age >= lifespan) {
-      print('particle lifespan reached');
-    }
-    if ((age >= lifespan) | (!onScreen(particle))) {
+    //particleAge[i] += 1.0;
+    if ((particleAge[i] >= particleLifespan[i]) | (!onScreen(particle))) {
       particle.x = width;//random(width);
       particle.y = random(height);
       particle.z = max(0, randomGaussian(0.5, 0.5));
-      age = 0;
-      lifespan = defaultLifespan + random(-10, 10);
+      particleAge[i] = 0;
+      particleLifespan[i] = defaultLifespan + random(-10, 10);
     }
 
   }
@@ -114,6 +111,7 @@ function draw() {
   for (let i = 0; i < pcount; i++) {
     let particle = particles[i];
     let hue = 180 + 60 * particle.z;
+    
     stroke(hue, 100, 100 * (1 - particle.z), 100 * (1 - particle.z));
     fill(hue, 100, 100 * (1 - particle.z), 100 * (1 - particle.z));
     circle(particle.x, particle.y, 100 * particle.z);
