@@ -8,13 +8,14 @@
  - particle age?
 
 - make particles look more like flowing water
- - particle lifetime?
+ x particle lifetime?
  - multi-shape 
  - put filter with more stuff over the top?
  - change noise scale based on local map, to change flow speed?
 
 */
 
+let flowField = [];
 let particles = [];
 let particleVelocity = [];
 let particleLifespan = [];
@@ -28,14 +29,14 @@ const lifespanSpread = 200;
 prevSeed = 0;
 currSeed = 0;
 seedLifeCounter = 0;
-const seedLife = 180;
+const seedLife = 120;
 
 function setup() {
-  createCanvas(1920, 1080);
+  createCanvas(2200, 1080);
   
   // create particles w/ randomized x,y coordinates
   for(let i = 0; i < pcount; i++) {
-    let zVal = max(0, randomGaussian(0.5, 0.5));
+    let zVal = min(max(0.05, randomGaussian(0.5, 0.5)), 0.9);
     particles.push(createVector(random(width), random(height), zVal));
     particleVelocity.push(createVector(0, 0));
     //particleLifespan.push(createVector(defaultLifespan + random(-10, 10)));
@@ -74,6 +75,7 @@ function draw() {
     let velocity = particleVelocity[i];
 
     let prevNoiseVal = noise(particle.x * noiseScale, particle.y * noiseScale);
+    //let prevNoiseVal = noise(particle.x, particle.y);
     let prevAngle = TAU * prevNoiseVal;
     velocity.x = cos(prevAngle);
     velocity.y = sin(prevAngle);
@@ -84,23 +86,26 @@ function draw() {
   for (let i = 0; i < pcount; i++) {
     let particle = particles[i];
     let velocity = particleVelocity[i];
-    let age = particleAge[i];
-    let lifespan = particleLifespan[i];
     
     // update position
     let currNoiseVal = noise(particle.x * noiseScale, particle.y * noiseScale);
+    //let currNoiseVal = noise(particle.x, particle.y);
     let currAngle = TAU * currNoiseVal;
-    velocity.x = particle.z * 2 * ((velocity.x + cos(currAngle)) / 2);
-    velocity.y = particle.z * 2 * ((velocity.y + sin(currAngle)) / 2);
+    //let localSpeed = findLocalSpeed(particle.x, particle.y);
+    let localSpeed = 2;
+    let localAngle = findLocalAngle(particle.x, particle.y);
+    velocity.x = localSpeed * max(0.25, particle.z) * 2 * (((velocity.x + cos(currAngle)) / 2) + cos(localAngle));
+    velocity.y = localSpeed * max(0.25, particle.z) * 2 * (((velocity.y + sin(currAngle)) / 2) + sin(localAngle));
     particle.x += velocity.x;
     particle.y += velocity.y;
 
     // refresh particles based on age / position
     //particleAge[i] += 1.0;
-    if ((particleAge[i] >= particleLifespan[i]) | (!onScreen(particle))) {
+    //if ((particleAge[i] >= particleLifespan[i]) | (!onScreen(particle))) {
+    if (!onScreen(particle)) {
       particle.x = width;//random(width);
       particle.y = random(height);
-      particle.z = max(0, randomGaussian(0.5, 0.5));
+      particle.z = min(max(0.05, randomGaussian(0.5, 0.5)), 0.9);
       particleAge[i] = 0;
       particleLifespan[i] = defaultLifespan + random(-10, 10);
     }
@@ -139,6 +144,33 @@ function draw() {
   filter(BLUR, 2);
 }
 
+function findLocalSpeed(x, y) {
+  if (x >= (width - 500)) {
+    return 2.5;
+  }
+  if (x >= 500) {
+    return 1.0;
+  }
+  return 1.0;
+}
+
+function findLocalAngle(x, y) {
+  if (x >= 800) {
+    return TAU * 0.5;  
+  }
+  if (x >= 600) {
+    return TAU * 0.6;
+  }
+  if (x >= 400) {
+    return TAU * 0.7;
+  }
+  return TAU * 0.75;
+}
+
 function onScreen(point) {
   return point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height;
+}
+
+function initFlowField() {
+  flowField = [];
 }
