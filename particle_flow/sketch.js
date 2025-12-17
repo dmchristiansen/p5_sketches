@@ -18,7 +18,9 @@
 let flowField = [];
 let particles = [];
 let particleVelocity = [];
+let particleHeading = [];
 let particleLifespan = [];
+let particleRand = [];
 let particleAge = [];
 let particleSize = [];
 const pcount = 1000;
@@ -39,9 +41,10 @@ function setup() {
     let zVal = min(max(0.05, randomGaussian(0.5, 0.5)), 0.9);
     particles.push(createVector(random(width), random(height), zVal));
     particleVelocity.push(createVector(0, 0));
+    particleHeading.push(0);
     //particleLifespan.push(createVector(defaultLifespan + random(-10, 10)));
     particleLifespan.push(defaultLifespan + random(-lifespanSpread, lifespanSpread));
-    //particleAge.push(createVector(0));
+    particleRand.push(random(-0.2, 0.2));
     particleAge.push(0);
     particleSize.push(createVector(0));
   }
@@ -72,16 +75,10 @@ function draw() {
   noiseSeed(prevSeed);
   for (let i = 0; i < pcount; i++) {
     let particle = particles[i];
-    let velocity = particleVelocity[i];
-
     let prevNoiseVal = noise(particle.x * noiseScale, particle.y * noiseScale);
-    //let prevNoiseVal = noise(particle.x, particle.y);
-    let prevAngle = TAU * prevNoiseVal;
-    velocity.x = cos(prevAngle);
-    velocity.y = sin(prevAngle);
+    particleHeading[i] = PI * prevNoiseVal;
   }
   
-
   noiseSeed(currSeed);
   for (let i = 0; i < pcount; i++) {
     let particle = particles[i];
@@ -89,13 +86,14 @@ function draw() {
     
     // update position
     let currNoiseVal = noise(particle.x * noiseScale, particle.y * noiseScale);
-    //let currNoiseVal = noise(particle.x, particle.y);
-    let currAngle = TAU * currNoiseVal;
-    //let localSpeed = findLocalSpeed(particle.x, particle.y);
+    particleHeading[i] += PI * currNoiseVal;
+
     let localSpeed = 2;
     let localAngle = findLocalAngle(particle.x, particle.y);
-    velocity.x = localSpeed * max(0.25, particle.z) * 2 * (((velocity.x + cos(currAngle)) / 2) + cos(localAngle));
-    velocity.y = localSpeed * max(0.25, particle.z) * 2 * (((velocity.y + sin(currAngle)) / 2) + sin(localAngle));
+    particleHeading[i] += localAngle + particleRand[i];
+
+    velocity.x = localSpeed * max(0.25, particle.z) * 3 * cos(particleHeading[i]);
+    velocity.y = localSpeed * max(0.25, particle.z) * 2 * sin(particleHeading[i]);
     particle.x += velocity.x;
     particle.y += velocity.y;
 
@@ -122,25 +120,6 @@ function draw() {
     circle(particle.x, particle.y, 100 * particle.z);
   }
 
-  /*
-  push();
-  for (let i = 0; i < pcount/2; i++) {
-    let particle = particles[i];
-    stroke(50, 50, 200, 50);
-    fill(50, 50, 200, 50);
-    circle(particle.x, particle.y, random(10, 15));
-  }
-  //filter(BLUR, 2);
-  pop();  
-  
-  for (let i = pcount/2; i < pcount; i++) {
-    let particle = particles[i];
-    stroke(100, 225, 255, 7);
-    fill(50, 175, 255, 5);
-    circle(particle.x, particle.y, random(40, 45));
-  }
-  */
-
   filter(BLUR, 2);
 }
 
@@ -155,16 +134,7 @@ function findLocalSpeed(x, y) {
 }
 
 function findLocalAngle(x, y) {
-  if (x >= 800) {
-    return TAU * 0.5;  
-  }
-  if (x >= 600) {
-    return TAU * 0.6;
-  }
-  if (x >= 400) {
-    return TAU * 0.7;
-  }
-  return TAU * 0.75;
+  return TAU * 0.25 * ((width - x) / width);
 }
 
 function onScreen(point) {
